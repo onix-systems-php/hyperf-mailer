@@ -75,16 +75,22 @@ return [
             'dsn' => env('MAIL_POSTMARK_DSN'),
         ],
 
-        'postmark' => [
-            // postmark+smtp://ID@default
-            // postmark+api://KEY@default
-            'dsn' => env('MAIL_POSTMARK_DSN'),
+        'sendgrid' => [
+            // sendgrid+smtp://KEY@default
+            // sendgrid+api://KEY@default
+            'dsn' => env('MAIL_SENDGRID_DSN'),
         ],
 
-        'postmark' => [
-            // postmark+smtp://ID@default
-            // postmark+api://KEY@default
-            'dsn' => env('MAIL_POSTMARK_DSN'),
+        'sendinblue' => [
+            // sendinblue+smtp://USERNAME:PASSWORD@default
+            // 	sendinblue+api://KEY@default
+            'dsn' => env('MAIL_SENDINBLUE_DSN'),
+        ],
+
+        'infobip' => [
+            // infobip+smtp://KEY@default
+            // infobip+api://KEY@BASE_URL
+            'dsn' => env('MAIL_INFOBIP_DSN'),
         ],
 
         'sendmail' => [
@@ -114,6 +120,11 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
+    ],
+
+    'to' => [
+        'address' => env('MAIL_TO_ADDRESS'),
+        'name' => env('MAIL_TO_NAME'),
     ],
 
     /*
