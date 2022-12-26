@@ -33,6 +33,12 @@ class ConfigProvider
                     'source' => __DIR__ . '/../publish/mail.php',
                     'destination' => BASE_PATH . '/config/autoload/mail.php',
                 ],
+                [
+                    'id' => 'queue_config',
+                    'description' => 'The async queue config for onix-systems-php/hyperf-mailer.',
+                    'source' => __DIR__ . '/../publish/async_queue.php',
+                    'destination' => BASE_PATH . '/config/autoload/async_queue.php',
+                ],
             ],
         ];
     }
