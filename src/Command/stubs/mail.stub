@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);
+namespace %NAMESPACE%;
+
+use OnixSystemsPHP\HyperfMailer\Contract\ShouldQueue;
+use OnixSystemsPHP\HyperfMailer\Mailable;
+
+class %CLASS% extends Mailable implements ShouldQueue
+{
+    /**
+     * Create a new message instance.
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Build the message.
+     */
+    public function build(): void
+    {
+        $this->htmlView('view.name');
+    }
+}
