@@ -11,7 +11,7 @@ use OnixSystemsPHP\HyperfMailer\Mailable;
 #[Service]
 class EmailService
 {
-    public function run(HasMailAddress $to, Mailable $mail): void
+    public function run(array|string|HasMailAddress $to, Mailable $mail): void
     {
         Mail::to($to)->queue($mail, 'emails');
     }
