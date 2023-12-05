@@ -1,14 +1,22 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer;
 
-use Hyperf\Utils\ApplicationContext;
-use Hyperf\Utils\Collection;
+use Hyperf\Collection\Collection;
+use Hyperf\Context\ApplicationContext;
 use OnixSystemsPHP\HyperfMailer\Contract\HasLocalePreference;
 use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
 use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
+
+use function Hyperf\Tappable\tap;
 
 class PendingMail
 {
@@ -38,9 +46,7 @@ class PendingMail
     /**
      * Create a new mailable mailer instance.
      */
-    public function __construct(protected MailManagerInterface|Contract\MailerInterface $mailer)
-    {
-    }
+    public function __construct(protected Contract\MailerInterface|MailManagerInterface $mailer) {}
 
     /**
      * Set the locale of the message.
@@ -139,7 +145,7 @@ class PendingMail
         return tap($mailable->to($this->to)
             ->cc($this->cc)
             ->bcc($this->bcc), function (MailableInterface $mailable) {
-                if (!empty($this->locale)) {
+                if (! empty($this->locale)) {
                     $mailable->locale($this->locale);
                 }
             });

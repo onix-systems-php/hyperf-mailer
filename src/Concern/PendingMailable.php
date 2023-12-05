@@ -1,9 +1,15 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer\Concern;
 
-use Hyperf\Utils\Collection;
+use Hyperf\Collection\Collection;
 use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
 use OnixSystemsPHP\HyperfMailer\PendingMail;
 
