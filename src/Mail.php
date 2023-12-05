@@ -1,10 +1,16 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer;
 
-use Hyperf\Utils\ApplicationContext;
-use Hyperf\Utils\Collection;
+use Hyperf\Collection\Collection;
+use Hyperf\Context\ApplicationContext;
 use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
 

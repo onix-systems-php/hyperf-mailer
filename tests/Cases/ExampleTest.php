@@ -1,6 +1,11 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace OnixSystemsPHP\HyperfMailer\Test\Cases;
 
@@ -10,7 +15,7 @@ namespace OnixSystemsPHP\HyperfMailer\Test\Cases;
  */
 class ExampleTest extends AbstractTestCase
 {
-    public function testExample()
+    public function testExample(): void
     {
         $this->assertTrue(true);
     }

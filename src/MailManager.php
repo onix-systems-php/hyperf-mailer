@@ -1,12 +1,18 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer;
 
+use Hyperf\Collection\Arr;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Logger\LoggerFactory;
-use Hyperf\Utils\Arr;
-use Hyperf\Utils\Str;
+use Hyperf\Stringable\Str;
 use OnixSystemsPHP\HyperfMailer\Concern\PendingMailable;
 use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailerInterface;
@@ -16,6 +22,8 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\Mailer\Mailer as SymfonyMailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mailer\Transport\TransportInterface;
+
+use function Hyperf\Support\make;
 
 /**
  * @mixin Mailer

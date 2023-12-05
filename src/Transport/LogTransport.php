@@ -1,10 +1,17 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer\Transport;
 
 use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
@@ -16,7 +23,7 @@ class LogTransport implements TransportInterface
     /**
      * The Logger instance.
      */
-    protected \Psr\Log\LoggerInterface $logger;
+    protected LoggerInterface $logger;
 
     /**
      * Create a new log transport instance.
@@ -34,9 +41,6 @@ class LogTransport implements TransportInterface
         return 'log://';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
     {
         if ($message instanceof Email) {
@@ -49,7 +53,7 @@ class LogTransport implements TransportInterface
     /**
      * Get the logger for the LogTransport instance.
      */
-    public function logger(): \Psr\Log\LoggerInterface
+    public function logger(): LoggerInterface
     {
         return $this->logger;
     }

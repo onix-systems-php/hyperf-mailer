@@ -1,21 +1,27 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer\Contract;
 
-use Hyperf\Utils\Collection;
+use Hyperf\Collection\Collection;
 
 interface MailableInterface
 {
     /**
      * Set the sender of the message.
      */
-    public function from(string|HasMailAddress $address, ?string $name = null): self;
+    public function from(HasMailAddress|string $address, ?string $name = null): self;
 
     /**
      * Set the "reply to" address of the message.
      */
-    public function replyTo(string|HasMailAddress $address, ?string $name = null): self;
+    public function replyTo(HasMailAddress|string $address, ?string $name = null): self;
 
     /**
      * Add the recipient of the message.
@@ -27,7 +33,7 @@ interface MailableInterface
     /**
      * Determine if the given recipient is set on the mailable.
      */
-    public function hasCc(string|HasMailAddress $address, ?string $name = null): bool;
+    public function hasCc(HasMailAddress|string $address, ?string $name = null): bool;
 
     /**
      * Add the recipients of the message.
@@ -39,7 +45,7 @@ interface MailableInterface
     /**
      * Determine if the given recipient is set on the mailable.
      */
-    public function hasBcc(string|HasMailAddress $address, ?string $name = null): bool;
+    public function hasBcc(HasMailAddress|string $address, ?string $name = null): bool;
 
     /**
      * Add the recipients of the message.
@@ -51,7 +57,7 @@ interface MailableInterface
     /**
      * Determine if the given recipient is set on the mailable.
      */
-    public function hasTo(string|HasMailAddress $address, ?string $name = null): bool;
+    public function hasTo(HasMailAddress|string $address, ?string $name = null): bool;
 
     /**
      * Set the subject of the message.

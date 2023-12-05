@@ -1,9 +1,15 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer;
 
-use Hyperf\Utils\Traits\ForwardsCalls;
+use Hyperf\Support\Traits\ForwardsCalls;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
@@ -25,9 +31,7 @@ class Message
     /**
      * Create a new message instance.
      */
-    public function __construct(protected Email $email)
-    {
-    }
+    public function __construct(protected Email $email) {}
 
     /**
      * Dynamically pass missing methods to the Symfony message instance.
@@ -42,7 +46,7 @@ class Message
     /**
      * Add a "from" address to the message.
      */
-    public function setFrom(array|string|null $address, ?string $name = null): self
+    public function setFrom(null|array|string $address, ?string $name = null): self
     {
         $this->setAddresses($address, $name, 'From');
 
@@ -52,7 +56,7 @@ class Message
     /**
      * Add a reply to address to the message.
      */
-    public function setReplyTo(array|string|null $address, ?string $name = null): self
+    public function setReplyTo(null|array|string $address, ?string $name = null): self
     {
         return $this->setAddresses($address, $name, 'ReplyTo');
     }
@@ -60,7 +64,7 @@ class Message
     /**
      * Set the "sender" of the message.
      */
-    public function setSender(array|string|null $address, ?string $name = null): self
+    public function setSender(null|array|string $address, ?string $name = null): self
     {
         $this->email->sender($this->prepareAddress($address, $name)[0]);
 
@@ -80,7 +84,7 @@ class Message
     /**
      * Set the recipient addresses of this message.
      */
-    public function setTo(array|string|null $address, ?string $name = null): self
+    public function setTo(null|array|string $address, ?string $name = null): self
     {
         return $this->setAddresses($address, $name, 'To');
     }
@@ -88,7 +92,7 @@ class Message
     /**
      * Add a carbon copy to the message.
      */
-    public function setCc(array|string|null $address, ?string $name = null, bool $override = false): self
+    public function setCc(null|array|string $address, ?string $name = null, bool $override = false): self
     {
         if ($override) {
             $this->setAddresses($address, $name, 'Cc');
@@ -102,7 +106,7 @@ class Message
     /**
      * Add a blind carbon copy to the message.
      */
-    public function setBcc(array|string|null $address, ?string $name = null, bool $override = false): self
+    public function setBcc(null|array|string $address, ?string $name = null, bool $override = false): self
     {
         if ($override) {
             $this->setAddresses($address, $name, 'Bcc');
@@ -141,7 +145,7 @@ class Message
         if (! empty($options['inline'])) {
             $attachment->asInline();
         }
-        $this->email->attachPart($attachment);
+        $this->email->addPart($attachment);
 
         return $this;
     }
@@ -155,7 +159,7 @@ class Message
         if (! empty($options['inline'])) {
             $attachment->asInline();
         }
-        $this->email->attachPart($attachment);
+        $this->email->addPart($attachment);
 
         return $this;
     }
@@ -170,7 +174,7 @@ class Message
         }
 
         $dataPart = DataPart::fromPath($file);
-        $this->email->attachPart($dataPart->asInline());
+        $this->email->addPart($dataPart->asInline());
 
         return $this->embeddedFiles[$file] = $dataPart->getContentId();
     }
@@ -181,7 +185,7 @@ class Message
     public function embedData(string $data, string $name, ?string $contentType = null): string
     {
         $dataPart = new DataPart($data, $name, $contentType);
-        $this->email->attachPart($dataPart->asInline());
+        $this->email->addPart($dataPart->asInline());
 
         return $dataPart->getContentId();
     }
@@ -209,7 +213,7 @@ class Message
     /**
      * Add a recipient to the message.
      */
-    protected function addAddresses(array|string|null $address, ?string $name = null, string $type = 'To'): self
+    protected function addAddresses(null|array|string $address, ?string $name = null, string $type = 'To'): self
     {
         $this->email->{"add{$type}"}(...$this->prepareAddress($address, $name));
 
@@ -219,7 +223,7 @@ class Message
     /**
      * Set a recipient to the message.
      */
-    protected function setAddresses(array|string|null $address, ?string $name = null, string $type = 'To'): self
+    protected function setAddresses(null|array|string $address, ?string $name = null, string $type = 'To'): self
     {
         $this->email->{lcfirst($type)}(...$this->prepareAddress($address, $name));
 
@@ -245,7 +249,7 @@ class Message
     /**
      * @return Address[]
      */
-    private function prepareAddress(array|string|null $address, ?string $name): array
+    private function prepareAddress(null|array|string $address, ?string $name): array
     {
         $result = [];
 

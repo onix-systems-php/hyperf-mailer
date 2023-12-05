@@ -1,5 +1,11 @@
 <?php
+
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace OnixSystemsPHP\HyperfMailer\Service;
 
@@ -11,7 +17,7 @@ use OnixSystemsPHP\HyperfMailer\Mailable;
 #[Service]
 class EmailService
 {
-    public function run(array|string|HasMailAddress $to, Mailable $mail): void
+    public function run(array|HasMailAddress|string $to, Mailable $mail): void
     {
         Mail::to($to)->queue($mail, 'emails');
     }

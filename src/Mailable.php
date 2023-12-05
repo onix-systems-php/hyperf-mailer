@@ -1,23 +1,34 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of the extension library for Hyperf.
+ *
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
+
 namespace OnixSystemsPHP\HyperfMailer;
 
 use Hyperf\AsyncQueue\Driver\DriverFactory;
+use Hyperf\Collection\Collection;
+use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\CompressInterface;
 use Hyperf\Contract\TranslatorInterface;
 use Hyperf\Contract\UnCompressInterface;
+use Hyperf\Coroutine\Coroutine;
 use Hyperf\Filesystem\FilesystemFactory;
-use Hyperf\Utils\ApplicationContext;
-use Hyperf\Utils\Collection;
-use Hyperf\Utils\Coroutine;
-use Hyperf\Utils\Str;
-use Hyperf\Utils\Traits\ForwardsCalls;
+use Hyperf\Stringable\Str;
+use Hyperf\Support\Traits\ForwardsCalls;
 use Hyperf\View\RenderInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
 use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailerInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
+use Swoole\Coroutine\Channel;
+
+use function Hyperf\Collection\collect;
+use function Hyperf\Config\config;
+use function Hyperf\Support\call;
 
 abstract class Mailable implements MailableInterface, CompressInterface, UnCompressInterface
 {
@@ -134,26 +145,26 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         return $this;
     }
 
-    public function from(string|HasMailAddress $address, ?string $name = null): self
+    public function from(HasMailAddress|string $address, ?string $name = null): self
     {
         $this->from = $this->normalizeRecipient($address, $name);
 
         return $this;
     }
 
-    public function hasFrom(string|HasMailAddress $address, ?string $name = null): bool
+    public function hasFrom(HasMailAddress|string $address, ?string $name = null): bool
     {
         return $this->from == $this->normalizeRecipient($address, $name);
     }
 
-    public function replyTo(string|HasMailAddress $address, ?string $name = null): self
+    public function replyTo(HasMailAddress|string $address, ?string $name = null): self
     {
         $this->replyTo = $this->normalizeRecipient($address, $name);
 
         return $this;
     }
 
-    public function hasReplyTo(string|HasMailAddress $address, ?string $name = null): bool
+    public function hasReplyTo(HasMailAddress|string $address, ?string $name = null): bool
     {
         return $this->hasRecipient($address, $name, 'replyTo');
     }
@@ -163,17 +174,17 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         return $this->addRecipient($address, $name, 'to');
     }
 
-    public function hasTo(string|HasMailAddress $address, ?string $name = null): bool
+    public function hasTo(HasMailAddress|string $address, ?string $name = null): bool
     {
         return $this->hasRecipient($address, $name, 'to');
     }
 
-    public function cc(array|string|HasMailAddress|Collection $address, ?string $name = null): self
+    public function cc(array|Collection|HasMailAddress|string $address, ?string $name = null): self
     {
         return $this->addRecipient($address, $name, 'cc');
     }
 
-    public function hasCc(string|HasMailAddress $address, ?string $name = null): bool
+    public function hasCc(HasMailAddress|string $address, ?string $name = null): bool
     {
         return $this->hasRecipient($address, $name, 'cc');
     }
@@ -183,7 +194,7 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         return $this->addRecipient($address, $name, 'bcc');
     }
 
-    public function hasBcc(string|HasMailAddress $address, ?string $name = null): bool
+    public function hasBcc(HasMailAddress|string $address, ?string $name = null): bool
     {
         return $this->hasRecipient($address, $name, 'bcc');
     }
@@ -423,14 +434,14 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
     protected function arrayizeAddress(array|Collection|HasMailAddress|string $address, ?string $name = null): array
     {
         $addresses = [];
-        if (is_array($address) or $address instanceof Collection) {
+        if (is_array($address) || $address instanceof Collection) {
             foreach ($address as $item) {
                 if (is_array($item) && isset($item['address'])) {
                     $addresses[] = [
                         'address' => $item['address'],
                         'name' => $item['name'] ?? null,
                     ];
-                } elseif (is_string($item) or $item instanceof HasMailAddress) {
+                } elseif (is_string($item) || $item instanceof HasMailAddress) {
                     $addresses[] = $this->normalizeRecipient($item);
                 }
             }
@@ -481,7 +492,7 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
 
     protected function buildView(array $data): array
     {
-        $channel = new \Swoole\Coroutine\Channel(1);
+        $channel = new Channel(1);
         Coroutine::create(function () use ($data, $channel) {
             if (! empty($this->locale)) {
                 ApplicationContext::getContainer()->get(TranslatorInterface::class)->setLocale($this->locale);
