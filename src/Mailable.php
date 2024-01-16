@@ -100,6 +100,11 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
     public array $attachments = [];
 
     /**
+     * The headers for the message.
+     */
+    public array $headers = [];
+
+    /**
      * The raw attachments for the message.
      */
     public array $rawAttachments = [];
@@ -249,6 +254,17 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         return $this;
     }
 
+    public function addHeader(string $name, mixed $argument, array $more = []): self
+    {
+        $this->headers[] = [
+            'name' => $name,
+            'argument' => $argument,
+            'more' => $more,
+        ];
+
+        return $this;
+    }
+
     public function mailer(string $mailer): self
     {
         $this->mailer = $mailer;
@@ -331,6 +347,7 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         $mailable
             ->buildAddresses($message)
             ->buildSubject($message)
+            ->buildHeaders($message)
             ->runCallbacks($message)
             ->buildAttachments($message)
             ->buildContents($message, $html, $plain, $data);
@@ -555,6 +572,18 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
             $message->setSubject($this->subject);
         } else {
             $message->setSubject(Str::title(Str::snake(class_basename($this), ' ')));
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add all the headers to the message.
+     */
+    protected function buildHeaders(Message $message): self
+    {
+        foreach ($this->headers as $header) {
+            $message->getHeaders()->addHeader($header['name'], $header['argument'], $header['more']);
         }
 
         return $this;
