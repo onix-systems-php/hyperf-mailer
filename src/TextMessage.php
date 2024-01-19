@@ -3,6 +3,7 @@
 namespace OnixSystemsPHP\HyperfMailer;
 
 use Hyperf\Support\Traits\ForwardsCalls;
+use OnixSystemsPHP\HyperfMailer\Contract\Attachable;
 
 /**
  * @mixin \OnixSystemsPHP\HyperfMailer\Message
@@ -11,39 +12,46 @@ class TextMessage
 {
     use ForwardsCalls;
 
-    protected $message;
-
-    public function __construct()
+    /**
+     * Create a new text message instance.
+     *
+     * @param \OnixSystemsPHP\HyperfMailer\Message $message
+     * @return void
+     */
+    public function __construct(protected Message $message)
     {
     }
 
     /**
-     * @param Attac
+     * Embed a file in the message and get the CID
+     *
+     * @param string|\OnixSystemsPHP\HyperfMailer\Attachment|\OnixSystemsPHP\HyperfMailer\Contract\Attachable $file
      * @return string
      */
-    public function embed($file)
+    public function embed(string|Attachment|Attachable $file): string
     {
         return '';
     }
 
     /**
-     * @param $data
-     * @param $name
-     * @param $contentType
+     * @param string $data
+     * @param string $name
+     * @param string|null $contentType
      * @return string
      */
-    public function embedData($data, $name, $contentType = null): string
+    public function embedData(string $data, string $name, ?string $contentType = null): string
     {
         return '';
     }
 
     /**
      * Dynamically pass missing methods to the underlying message instance.
-     * @param $method
-     * @param $parameters
+     *
+     * @param string $method
+     * @param array $parameters
      * @return mixed
      */
-    public function __call($method, $parameters)
+    public function __call(string $method, array $parameters)
     {
         return $this->forwardCallTo($this->message, $method, $parameters);
     }
