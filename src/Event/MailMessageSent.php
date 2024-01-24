@@ -9,14 +9,16 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer\Event;
 
-use Symfony\Component\Mime\Email;
+use OnixSystemsPHP\HyperfMailer\SentMessage;
+use Symfony\Component\Mime\RawMessage;
+use function Hyperf\Collection\collect;
 
 class MailMessageSent
 {
     /**
-     * The Symfony message instance.
+     * The message that was sent.
      */
-    public Email $message;
+    public SentMessage $sent;
 
     /**
      * The message data.
@@ -26,10 +28,10 @@ class MailMessageSent
     /**
      * Create a new event instance.
      */
-    public function __construct(Email $message, array $data = [])
+    public function __construct(SentMessage $message, array $data = [])
     {
         $this->data = $data;
-        $this->message = $message;
+        $this->sent = $message;
     }
 
     /**
@@ -37,16 +39,12 @@ class MailMessageSent
      */
     public function __serialize(): array
     {
-        $hasAttachments = ! empty($this->message->getAttachments());
+        $hasAttachments = collect($this->message->getAttachments())->isNotEmpty();
 
-        return $hasAttachments ? [
-            'message' => base64_encode(serialize($this->message)),
-            'data' => base64_encode(serialize($this->data)),
-            'hasAttachments' => true,
-        ] : [
-            'message' => $this->message,
-            'data' => $this->data,
-            'hasAttachments' => false,
+        return [
+            'sent' => $this->sent,
+            'data' => $hasAttachments ? base64_encode(serialize($this->data)) : $this->data,
+            'hasAttachments' => $hasAttachments,
         ];
     }
 
@@ -55,12 +53,27 @@ class MailMessageSent
      */
     public function __unserialize(array $data): void
     {
-        if (isset($data['hasAttachments']) && $data['hasAttachments'] === true) {
-            $this->message = unserialize(base64_decode($data['message']));
-            $this->data = unserialize(base64_decode($data['data']));
-        } else {
-            $this->message = $data['message'];
-            $this->data = $data['data'];
+        $this->sent = $data['sent'];
+
+        $this->data = (($data['hasAttachments'] ?? false) === true)
+            ? unserialize(base64_decode($data['data']))
+            : $data['data'];
+    }
+
+    /**
+     * Dynamically get the original message.
+     *
+     * @param string $key
+     * @return RawMessage
+     *
+     * @throws \Exception
+     */
+    public function __get(string $key): RawMessage
+    {
+        if ($key === 'message') {
+            return $this->sent->getOriginalMessage();
         }
+
+        throw new \Exception('Unable to access undefined property on ' . __CLASS__ . ': ' . $key);
     }
 }

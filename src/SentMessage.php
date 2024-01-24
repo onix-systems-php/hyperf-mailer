@@ -11,20 +11,20 @@ namespace OnixSystemsPHP\HyperfMailer;
 
 use Hyperf\Support\Traits\ForwardsCalls;
 use Symfony\Component\Mailer\SentMessage as SymfonySentMessage;
+
 use function Hyperf\Collection\collect;
 
+/**
+ * @mixin SymfonySentMessage
+ */
 class SentMessage
 {
     use ForwardsCalls;
 
     /**
      * Create a new SentMessage instance.
-     *
-     * @param \Symfony\Component\Mailer\SentMessage $sentMessage
      */
-    public function __construct(protected SymfonySentMessage $sentMessage)
-    {
-    }
+    public function __construct(protected SymfonySentMessage $sentMessage) {}
 
     /**
      * Dynamically pass missing methods to the Symfony instance.
@@ -53,9 +53,6 @@ class SentMessage
 
     /**
      * Marshal the object from its serialized data.
-     *
-     * @param array $data
-     * @return void
      */
     public function __unserialize(array $data)
     {
@@ -66,8 +63,6 @@ class SentMessage
 
     /**
      * Get the underlying Symfony Email instance.
-     *
-     * @return SymfonySentMessage
      */
     public function getSymfonySentMessage(): SymfonySentMessage
     {
