@@ -18,16 +18,12 @@ class SentMessage
     use ForwardsCalls;
 
     /**
-     * The Symfony SentMessage instance.
-     */
-    protected SymfonySentMessage $sentMessage;
-
-    /**
      * Create a new SentMessage instance.
+     *
+     * @param \Symfony\Component\Mailer\SentMessage $sentMessage
      */
-    public function __construct(SymfonySentMessage $sentMessage)
+    public function __construct(protected SymfonySentMessage $sentMessage)
     {
-        $this->sentMessage = $sentMessage;
     }
 
     /**
@@ -57,6 +53,9 @@ class SentMessage
 
     /**
      * Marshal the object from its serialized data.
+     *
+     * @param array $data
+     * @return void
      */
     public function __unserialize(array $data)
     {
@@ -67,6 +66,8 @@ class SentMessage
 
     /**
      * Get the underlying Symfony Email instance.
+     *
+     * @return SymfonySentMessage
      */
     public function getSymfonySentMessage(): SymfonySentMessage
     {
