@@ -145,6 +145,9 @@ class Message
         if (! empty($options['inline'])) {
             $attachment->asInline();
         }
+        if (!empty($options['cid'])) {
+            $attachment->setContentId($options['cid']);
+        }
         $this->email->addPart($attachment);
 
         return $this;
