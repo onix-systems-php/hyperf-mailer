@@ -15,19 +15,62 @@ class Content
 {
     use Conditionable;
 
+    /**
+     * The Blade view that should be rendered for the mailable.
+     */
+    public ?string $view;
+
+    /**
+     * The Blade view that should be rendered for the mailable.
+     *
+     * Alternative syntax for "view".
+     */
+    public ?string $html;
+
+    /**
+     * The Blade view that represents the text version of the message.
+     */
+    public ?string $text;
+
+    /**
+     * The Blade view that represents the Markdown version of the message.
+     */
+    public ?string $markdown;
+
+    /**
+     * The pre-rendered HTML of the message.
+     */
+    public ?string $htmlString;
+
+    /**
+     * The message's view data.
+     */
+    public array $with;
+
+    /**
+     * Create a new content definition.
+     *
+     * @named-arguments-supported
+     */
     public function __construct(
-        public ?string $view = null,
-        public ?string $html = null,
-        private ?string $text = null,
-        private ?string $markdown = null,
-        private array $with = [],
-        public ?string $htmlString = null,
-    ) {}
+        string $view = null,
+        string $html = null,
+        string $text = null,
+        string $markdown = null,
+        array $with = [],
+        string $htmlString = null
+    ) {
+        $this->view = $view;
+        $this->html = $html;
+        $this->text = $text;
+        $this->markdown = $markdown;
+        $this->with = $with;
+        $this->htmlString = $htmlString;
+    }
 
     /**
      * Set the view for the message.
      *
-     * @param string $view
      * @return $this
      */
     public function view(string $view): Content
@@ -40,7 +83,6 @@ class Content
     /**
      * Set the view for the message.
      *
-     * @param string $view
      * @return $this
      */
     public function html(string $view): Content
@@ -51,7 +93,6 @@ class Content
     /**
      * Set the plain text view for the message.
      *
-     * @param string $view
      * @return $this
      */
     public function text(string $view): Content
@@ -88,7 +129,7 @@ class Content
     }
 
     /**
-     * @return $this
+     * Set the pre-rendered HTML for the message.
      */
     public function htmlString(string $html): Content
     {

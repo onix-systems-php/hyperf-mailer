@@ -45,8 +45,6 @@ class ArrayTransport implements TransportInterface
 
     /**
      * Retrieve the collection of messages.
-     *
-     * @return \Hyperf\Collection\Collection
      */
     public function messages(): Collection
     {
@@ -55,8 +53,6 @@ class ArrayTransport implements TransportInterface
 
     /**
      * Clear all the messages from the local collection.
-     *
-     * @return \Hyperf\Collection\Collection
      */
     public function flush(): Collection
     {

@@ -44,9 +44,24 @@ class Envelope
     public array $replyTo;
 
     /**
+     * The subject of the message.
+     */
+    public ?string $subject;
+
+    /**
+     * The message's tags.
+     */
+    public array $tags = [];
+
+    /**
+     * The message's meta data.
+     */
+    public array $metadata = [];
+
+    /**
      * The message's Symfony Message customization callbacks.
      */
-    public array|\Closure $using = [];
+    public array $using = [];
 
     /**
      * Create a new message envelope instance.
@@ -57,25 +72,24 @@ class Envelope
         array $cc = [],
         array $bcc = [],
         array $replyTo = [],
-        public ?string $subject = null,
-        public array $tags = [],
-        public array $metadata = [],
-        array $using = [],
+        string $subject = null,
+        array $tags = [],
+        array $metadata = [],
+        array|\Closure $using = []
     ) {
         $this->from = is_string($from) ? new Address($from) : $from;
         $this->to = $this->normalizeAddresses($to);
         $this->cc = $this->normalizeAddresses($cc);
         $this->bcc = $this->normalizeAddresses($bcc);
         $this->replyTo = $this->normalizeAddresses($replyTo);
+        $this->subject = $subject;
+        $this->tags = $tags;
+        $this->metadata = $metadata;
         $this->using = Arr::wrap($using);
     }
 
     /**
      * Specify who the message will be "from".
-     *
-     * @param \OnixSystemsPHP\HyperfMailer\Mailables\Address|string $address
-     * @param string|null $name
-     * @return $this
      */
     public function from(Address|string $address, string $name = null): Envelope
     {
@@ -87,8 +101,6 @@ class Envelope
     /**
      * Add a "to" recipient to the message envelope.
      *
-     * @param \OnixSystemsPHP\HyperfMailer\Mailables\Address|array|string $address
-     * @param string|null $name
      * @return $this
      */
     public function to(Address|array|string $address, string $name = null): Envelope
@@ -102,12 +114,8 @@ class Envelope
 
     /**
      * Add a "cc" recipient to the message envelope.
-     *
-     * @param \OnixSystemsPHP\HyperfMailer\Mailables\Address|array|string $address
-     * @param string|null $name
-     * @return $this
      */
-    public function cc(Address|array|string $address, string $name = null): static
+    public function cc(Address|array|string $address, string $name = null): Envelope
     {
         $this->cc = array_merge($this->cc, $this->normalizeAddresses(
             is_string($name) ? [new Address($address, $name)] : Arr::wrap($address),
@@ -118,10 +126,6 @@ class Envelope
 
     /**
      * Add a "bcc" recipient to the message envelope.
-     *
-     * @param \OnixSystemsPHP\HyperfMailer\Mailables\Address|array|string $address
-     * @param string|null $name
-     * @return $this
      */
     public function bcc(Address|array|string $address, string $name = null): Envelope
     {
@@ -134,10 +138,6 @@ class Envelope
 
     /**
      * Add a "reply to" recipient to the message envelope.
-     *
-     * @param \OnixSystemsPHP\HyperfMailer\Mailables\Address|array|string $address
-     * @param string|null $name
-     * @return $this
      */
     public function replyTo(Address|array|string $address, string $name = null): Envelope
     {
@@ -151,7 +151,6 @@ class Envelope
     /**
      * Set the subject of the message.
      *
-     * @param string $subject
      * @return $this
      */
     public function subject(string $subject): Envelope
@@ -164,7 +163,6 @@ class Envelope
     /**
      * Add "tags" to the message.
      *
-     * @param array $tags
      * @return $this
      */
     public function tags(array $tags): Envelope
@@ -177,7 +175,6 @@ class Envelope
     /**
      * Add a "tag" to the message.
      *
-     * @param string $tag
      * @return $this
      */
     public function tag(string $tag): Envelope
@@ -189,10 +186,6 @@ class Envelope
 
     /**
      * Add metadata to the message.
-     *
-     * @param string $key
-     * @param int|string $value
-     * @return $this
      */
     public function metadata(string $key, int|string $value): Envelope
     {
@@ -203,9 +196,6 @@ class Envelope
 
     /**
      * Add a Symfony Message customization callback to the message.
-     *
-     * @param \Closure $callback
-     * @return $this
      */
     public function using(\Closure $callback): Envelope
     {
@@ -216,10 +206,6 @@ class Envelope
 
     /**
      * Determine if the message is from the given address.
-     *
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     public function isFrom(string $address, string $name = null): bool
     {
@@ -233,10 +219,6 @@ class Envelope
 
     /**
      * Determine if the message has the given address as a recipient.
-     *
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     public function hasTo(string $address, string $name = null): bool
     {
@@ -245,10 +227,6 @@ class Envelope
 
     /**
      * Determine if the message has the given address as a "cc" recipient.
-     *
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     public function hasCc(string $address, string $name = null): bool
     {
@@ -257,10 +235,6 @@ class Envelope
 
     /**
      * Determine if the message has the given address as a "bcc" recipient.
-     *
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     public function hasBcc(string $address, string $name = null): bool
     {
@@ -269,10 +243,6 @@ class Envelope
 
     /**
      * Determine if the message has the given address as a "reply to" recipient.
-     *
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     public function hasReplyTo(string $address, string $name = null): bool
     {
@@ -281,9 +251,6 @@ class Envelope
 
     /**
      * Determine if the message has the given subject.
-     *
-     * @param string $subject
-     * @return bool
      */
     public function hasSubject(string $subject): bool
     {
@@ -292,10 +259,6 @@ class Envelope
 
     /**
      * Determine if the message has the given metadata.
-     *
-     * @param  string  $key
-     * @param  string  $value
-     * @return bool
      */
     public function hasMetadata(string $key, string $value): bool
     {
@@ -303,12 +266,17 @@ class Envelope
     }
 
     /**
+     * Normalize the given array of addresses.
+     */
+    protected function normalizeAddresses(array $addresses): array
+    {
+        return collect($addresses)->map(function ($address) {
+            return is_string($address) ? new Address($address) : $address;
+        })->all();
+    }
+
+    /**
      * Determine if the message has the given recipient.
-     *
-     * @param array $recipients
-     * @param string $address
-     * @param string|null $name
-     * @return bool
      */
     protected function hasRecipient(array $recipients, string $address, ?string $name = null): bool
     {
@@ -320,18 +288,5 @@ class Envelope
             return $recipient->address === $address
                 && $recipient->name === $name;
         });
-    }
-
-    /**
-     * Normalize the given array of addresses.
-     *
-     * @param array $addresses
-     * @return array
-     */
-    protected function normalizeAddresses(array $addresses): array
-    {
-        return collect($addresses)->map(function ($address) {
-            return is_string($address) ? new Address($address) : $address;
-        })->all();
     }
 }

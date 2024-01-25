@@ -40,10 +40,6 @@ class Attachment
 
     /**
      * Create a mail attachment from in-memory data.
-     *
-     * @param \Closure $data
-     * @param string|null $name
-     * @return Attachment
      */
     public static function fromData(\Closure $data, string $name = null): static
     {
@@ -57,7 +53,7 @@ class Attachment
      */
     public static function fromStorage(string $path): static
     {
-        return static::fromStorageDisk(null, $path);
+        return static::и(null, $path);
     }
 
     /**

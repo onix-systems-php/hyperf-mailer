@@ -9,13 +9,11 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer\Transport;
 
-use Hyperf\Logger\LoggerFactory;
-use Psr\Container\ContainerInterface;
+use Hyperf\Stringable\Str;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\TransportInterface;
-use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\RawMessage;
 
 class LogTransport implements TransportInterface
@@ -28,14 +26,14 @@ class LogTransport implements TransportInterface
     /**
      * Create a new log transport instance.
      */
-    public function __construct(ContainerInterface $container, array $options = [])
+    public function __construct(LoggerInterface $logger)
     {
-        $this->logger = $container->get(LoggerFactory::class)->get(
-            $options['name'] ?? 'mail.local',
-            $options['group'] ?? 'default'
-        );
+        $this->logger = $logger;
     }
 
+    /**
+     * Get the string representation of the transport.
+     */
     public function __toString(): string
     {
         return 'log://';
@@ -43,11 +41,26 @@ class LogTransport implements TransportInterface
 
     public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
     {
-        if ($message instanceof Email) {
-            $this->logger->debug($this->getMimeEntityString($message));
+        $string = Str::of($message->toString());
+
+        if ($string->contains('Content-Type: multipart/')) {
+            $boundary = $string
+                ->after('boundary=')
+                ->before("\r\n")
+                ->prepend('--')
+                ->append("\r\n");
+
+            $string = $string
+                ->explode($boundary)
+                ->map($this->decodeQuotedPrintableContent(...))
+                ->implode((string) $boundary);
+        } elseif ($string->contains('Content-Transfer-Encoding: quoted-printable')) {
+            $string = $this->decodeQuotedPrintableContent((string) $string);
         }
 
-        return $message;
+        $this->logger->debug((string) $string);
+
+        return new SentMessage($message, $envelope ?? Envelope::create($message));
     }
 
     /**
@@ -59,10 +72,19 @@ class LogTransport implements TransportInterface
     }
 
     /**
-     * Get a loggable string out of a Email entity.
+     * Decode the given quoted printable content.
      */
-    protected function getMimeEntityString(Email $entity): string
+    protected function decodeQuotedPrintableContent(string $part): string
     {
-        return $entity->toString();
+        if (! str_contains($part, 'Content-Transfer-Encoding: quoted-printable')) {
+            return $part;
+        }
+
+        [$headers, $content] = explode("\r\n\r\n", $part, 2);
+
+        return implode("\r\n\r\n", [
+            $headers,
+            quoted_printable_decode($content),
+        ]);
     }
 }
