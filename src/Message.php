@@ -9,10 +9,15 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer;
 
+use Hyperf\Stringable\Str;
 use Hyperf\Support\Traits\ForwardsCalls;
+use OnixSystemsPHP\HyperfMailer\Contract\Attachable;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
+use Symfony\Component\Mime\Part\File;
+
+use function Hyperf\Collection\collect;
 
 /**
  * @mixin Email
@@ -22,51 +27,55 @@ class Message
     use ForwardsCalls;
 
     /**
+     * The Symfony Email instance.
+     */
+    protected Email $message;
+
+    /**
      * CIDs of files embedded in the message.
+     *
+     * @deprecated will be removed in a future Laravel version
      */
     protected array $embeddedFiles = [];
-
-    protected array $data = [];
 
     /**
      * Create a new message instance.
      */
-    public function __construct(protected Email $email) {}
+    public function __construct(Email $message)
+    {
+        $this->message = $message;
+    }
 
     /**
-     * Dynamically pass missing methods to the Symfony message instance.
+     * Dynamically pass missing methods to the Symfony instance.
      *
      * @return mixed
      */
     public function __call(string $method, array $parameters)
     {
-        return $this->forwardCallTo($this->email, $method, $parameters);
+        return $this->forwardCallTo($this->message, $method, $parameters);
     }
 
     /**
      * Add a "from" address to the message.
      */
-    public function setFrom(null|array|string $address, ?string $name = null): self
+    public function from(array|string $address, string $name = null): static
     {
-        $this->setAddresses($address, $name, 'From');
+        is_array($address)
+            ? $this->message->from(...$address)
+            : $this->message->from(new Address($address, (string) $name));
 
         return $this;
     }
 
     /**
-     * Add a reply to address to the message.
-     */
-    public function setReplyTo(null|array|string $address, ?string $name = null): self
-    {
-        return $this->setAddresses($address, $name, 'ReplyTo');
-    }
-
-    /**
      * Set the "sender" of the message.
      */
-    public function setSender(null|array|string $address, ?string $name = null): self
+    public function sender(array|string $address, string $name = null): static
     {
-        $this->email->sender($this->prepareAddress($address, $name)[0]);
+        is_array($address)
+            ? $this->message->sender(...$address)
+            : $this->message->sender(new Address($address, (string) $name));
 
         return $this;
     }
@@ -74,30 +83,70 @@ class Message
     /**
      * Set the "return path" of the message.
      */
-    public function setReturnPath(string $address): self
+    public function returnPath(string $address): static
     {
-        $this->email->returnPath($address);
+        $this->message->returnPath($address);
 
         return $this;
     }
 
     /**
-     * Set the recipient addresses of this message.
+     * Add a recipient to the message.
      */
-    public function setTo(null|array|string $address, ?string $name = null): self
+    public function to(array|string $address, string $name = null, bool $override = false): static
     {
-        return $this->setAddresses($address, $name, 'To');
+        if ($override) {
+            is_array($address)
+                ? $this->message->to(...$address)
+                : $this->message->to(new Address($address, (string) $name));
+
+            return $this;
+        }
+
+        return $this->addAddresses($address, $name, 'To');
+    }
+
+    /**
+     * Remove all "to" addresses from the message.
+     */
+    public function forgetTo(): static
+    {
+        if ($header = $this->message->getHeaders()->get('To')) {
+            $this->addAddressDebugHeader('X-To', $this->message->getTo());
+
+            $header->setAddresses([]);
+        }
+
+        return $this;
     }
 
     /**
      * Add a carbon copy to the message.
      */
-    public function setCc(null|array|string $address, ?string $name = null, bool $override = false): self
+    public function cc(array|string $address, string $name = null, bool $override = false): static
     {
         if ($override) {
-            $this->setAddresses($address, $name, 'Cc');
-        } else {
-            $this->addAddresses($address, $name, 'Cc');
+            is_array($address)
+                ? $this->message->cc(...$address)
+                : $this->message->cc(new Address($address, (string) $name));
+
+            return $this;
+        }
+
+        return $this->addAddresses($address, $name, 'Cc');
+    }
+
+    /**
+     * Remove all carbon copy addresses from the message.
+     *
+     * @return $this
+     */
+    public function forgetCc(): static
+    {
+        if ($header = $this->message->getHeaders()->get('Cc')) {
+            $this->addAddressDebugHeader('X-Cc', $this->message->getCC());
+
+            $header->setAddresses([]);
         }
 
         return $this;
@@ -106,22 +155,47 @@ class Message
     /**
      * Add a blind carbon copy to the message.
      */
-    public function setBcc(null|array|string $address, ?string $name = null, bool $override = false): self
+    public function bcc(array|string $address, string $name = null, bool $override = false): static
     {
         if ($override) {
-            $this->setAddresses($address, $name, 'Bcc');
-        } else {
-            $this->addAddresses($address, $name, 'Bcc');
+            is_array($address)
+                ? $this->message->bcc(...$address)
+                : $this->message->bcc(new Address($address, (string) $name));
+
+            return $this;
         }
+
+        return $this->addAddresses($address, $name, 'Bcc');
+    }
+
+    /**
+     * Remove all of the blind carbon copy addresses from the message.
+     */
+    public function forgetBcc(): static
+    {
+        if ($header = $this->message->getHeaders()->get('Bcc')) {
+            $this->addAddressDebugHeader('X-Bcc', $this->message->getBcc());
+
+            $header->setAddresses([]);
+        }
+
         return $this;
+    }
+
+    /**
+     * Add a "reply to" address to the message.
+     */
+    public function replyTo(array|string $address, string $name = null): static
+    {
+        return $this->addAddresses($address, $name, 'ReplyTo');
     }
 
     /**
      * Set the subject of the message.
      */
-    public function setSubject(string $subject): self
+    public function subject(string $subject): static
     {
-        $this->email->subject($subject);
+        $this->message->subject($subject);
 
         return $this;
     }
@@ -129,9 +203,9 @@ class Message
     /**
      * Set the message priority level.
      */
-    public function setPriority(int $level): self
+    public function priority(int $level): static
     {
-        $this->email->priority($level);
+        $this->message->priority($level);
 
         return $this;
     }
@@ -139,16 +213,17 @@ class Message
     /**
      * Attach a file to the message.
      */
-    public function attachFile(string $file, array $options = []): self
+    public function attach(Attachable|string $file, array $options = []): static
     {
-        $attachment = $this->createAttachmentFromPath($file, $options);
-        if (! empty($options['inline'])) {
-            $attachment->asInline();
+        if ($file instanceof Attachable) {
+            $file = $file->toMailAttachment();
         }
-        if (!empty($options['cid'])) {
-            $attachment->setContentId($options['cid']);
+
+        if ($file instanceof Attachment) {
+            return $file->attachTo($this);
         }
-        $this->email->addPart($attachment);
+
+        $this->message->attachFromPath($file, $options['as'] ?? null, $options['mime'] ?? null);
 
         return $this;
     }
@@ -156,13 +231,9 @@ class Message
     /**
      * Attach in-memory data as an attachment.
      */
-    public function attachData(string $data, string $name, array $options = []): self
+    public function attachData(string $data, string $name, array $options = []): static
     {
-        $attachment = $this->createAttachmentFromData($data, $name, $options['mime'] ?? null);
-        if (! empty($options['inline'])) {
-            $attachment->asInline();
-        }
-        $this->email->addPart($attachment);
+        $this->message->attach($data, $name, $options['mime'] ?? null);
 
         return $this;
     }
@@ -170,109 +241,104 @@ class Message
     /**
      * Embed a file in the message and get the CID.
      */
-    public function embed(string $file): string
+    public function embed(Attachable|string $file): string
     {
-        if (isset($this->embeddedFiles[$file])) {
-            return $this->embeddedFiles[$file];
+        if ($file instanceof Attachable) {
+            $file = $file->toMailAttachment();
         }
 
-        $dataPart = DataPart::fromPath($file);
-        $this->email->addPart($dataPart->asInline());
+        if ($file instanceof Attachment) {
+            return $file->attachWith(
+                function ($path) use ($file) {
+                    $cid = $file->as ?? Str::random();
 
-        return $this->embeddedFiles[$file] = $dataPart->getContentId();
+                    $this->message->addPart(
+                        (new DataPart(new File($path), $cid, $file->mime))->asInline()
+                    );
+
+                    return "cid:{$cid}";
+                },
+                function ($data) use ($file) {
+                    $this->message->addPart(
+                        (new DataPart($data(), $file->as, $file->mime))->asInline()
+                    );
+
+                    return "cid:{$file->as}";
+                }
+            );
+        }
+
+        $cid = Str::random(10);
+
+        $this->message->addPart(
+            (new DataPart(new File($file), $cid))->asInline()
+        );
+
+        return "cid:{$cid}";
     }
 
     /**
      * Embed in-memory data in the message and get the CID.
      */
-    public function embedData(string $data, string $name, ?string $contentType = null): string
+    public function embedData(string $data, string $name, string $contentType = null): string
     {
-        $dataPart = new DataPart($data, $name, $contentType);
-        $this->email->addPart($dataPart->asInline());
+        $this->message->addPart(
+            (new DataPart($data, $name, $contentType))->asInline()
+        );
 
-        return $dataPart->getContentId();
+        return "cid:{$name}";
     }
 
     /**
-     * Get the underlying Email instance.
+     * Get the underlying Symfony Email instance.
      */
-    public function getEmail(): Email
+    public function getSymfonyMessage(): Email
     {
-        return $this->email;
-    }
-
-    public function setData(array $data): self
-    {
-        $this->data = $data;
-
-        return $this;
-    }
-
-    public function getData(): array
-    {
-        return $this->data;
+        return $this->message;
     }
 
     /**
      * Add a recipient to the message.
      */
-    protected function addAddresses(null|array|string $address, ?string $name = null, string $type = 'To'): self
+    protected function addAddresses(array|string $address, string $name, string $type): static
     {
-        $this->email->{"add{$type}"}(...$this->prepareAddress($address, $name));
+        if (is_array($address)) {
+            $type = lcfirst($type);
 
-        return $this;
-    }
-
-    /**
-     * Set a recipient to the message.
-     */
-    protected function setAddresses(null|array|string $address, ?string $name = null, string $type = 'To'): self
-    {
-        $this->email->{lcfirst($type)}(...$this->prepareAddress($address, $name));
-
-        return $this;
-    }
-
-    /**
-     * Create a DataPart instance.
-     */
-    protected function createAttachmentFromPath(string $file, array $options): DataPart
-    {
-        return DataPart::fromPath($file, $options['as'] ?? null, $options['mime'] ?? null);
-    }
-
-    /**
-     * Create a DataPart instance from data.
-     */
-    protected function createAttachmentFromData(string $data, string $name, ?string $type = null): DataPart
-    {
-        return new DataPart($data, $name, $type);
-    }
-
-    /**
-     * @return Address[]
-     */
-    private function prepareAddress(null|array|string $address, ?string $name): array
-    {
-        $result = [];
-
-        if (is_null($address)) {
-            return $result;
-        }
-
-        if (! is_array($address)) {
-            $result[] = new Address($address, $name ?? '');
-        } else {
-            foreach ($address as $key => $item) {
-                if (is_array($item)) {
-                    $result[] = new Address($item['address'], $item['name']);
-                } elseif (is_string($key)) {
-                    $result[] = new Address($key, $item);
-                } else {
-                    $result[] = new Address($item);
+            $addresses = collect($address)->map(function ($address, $key) {
+                if (is_string($key) && is_string($address)) {
+                    return new Address($key, $address);
                 }
-            }
+
+                if (is_array($address)) {
+                    return new Address($address['email'] ?? $address['address'], $address['name'] ?? null);
+                }
+
+                if (is_null($address)) {
+                    return new Address($key);
+                }
+
+                return $address;
+            })->all();
+
+            $this->message->{"{$type}"}(...$addresses);
+        } else {
+            $this->message->{"add{$type}"}(new Address($address, (string) $name));
         }
-        return $result;
+
+        return $this;
+    }
+
+    /**
+     * Add an address debug header for a list of recipients.
+     */
+    protected function addAddressDebugHeader(string $header, array $addresses): static
+    {
+        $this->message->getHeaders()->addTextHeader(
+            $header,
+            implode(', ', array_map(fn ($a) => $a->toString(), $addresses)),
+        );
+
+        return $this;
     }
 }

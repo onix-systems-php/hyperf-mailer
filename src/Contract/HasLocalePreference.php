@@ -14,5 +14,5 @@ interface HasLocalePreference
     /**
      * Get the preferred locale of the entity.
      */
-    public function getPreferredLocale(): ?string;
+    public function preferredLocale(): ?string;
 }

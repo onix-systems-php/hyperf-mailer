@@ -9,17 +9,19 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer;
 
-use Hyperf\Collection\Collection;
-use Hyperf\Context\ApplicationContext;
+use Hyperf\Conditionable\Conditionable;
 use OnixSystemsPHP\HyperfMailer\Contract\HasLocalePreference;
-use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
-use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
-use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
-
 use function Hyperf\Tappable\tap;
 
 class PendingMail
 {
+    use Conditionable;
+
+    /**
+     * The mailer instance.
+     */
+    protected Mailer $mailer;
+
     /**
      * The locale of the message.
      */
@@ -27,31 +29,31 @@ class PendingMail
 
     /**
      * The "to" recipients of the message.
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
-    protected array|Collection|HasMailAddress|string $to = [];
+    protected array $to = [];
 
     /**
      * The "cc" recipients of the message.
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
-    protected array|Collection|HasMailAddress|string $cc = [];
+    protected array $cc = [];
 
     /**
      * The "bcc" recipients of the message.
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
-    protected array|Collection|HasMailAddress|string $bcc = [];
+    protected array $bcc = [];
 
     /**
      * Create a new mailable mailer instance.
      */
-    public function __construct(protected Contract\MailerInterface|MailManagerInterface $mailer) {}
+    public function __construct(Mailer $mailer)
+    {
+        $this->mailer = $mailer;
+    }
 
     /**
      * Set the locale of the message.
      */
-    public function locale(string $locale): self
+    public function locale(string $locale): static
     {
         $this->locale = $locale;
 
@@ -61,15 +63,12 @@ class PendingMail
     /**
      * Set the recipients of the message.
      */
-    public function to(array|Collection|HasMailAddress|string $users): self
+    public function to(mixed $users): static
     {
         $this->to = $users;
 
-        if (empty($this->locale)
-            && $users instanceof HasLocalePreference
-            && is_string($locale = $users->getPreferredLocale())
-        ) {
-            $this->locale($locale);
+        if (! $this->locale && $users instanceof HasLocalePreference) {
+            $this->locale($users->preferredLocale());
         }
 
         return $this;
@@ -78,7 +77,7 @@ class PendingMail
     /**
      * Set the recipients of the message.
      */
-    public function cc(array|Collection|HasMailAddress|string $users): self
+    public function cc(mixed $users): static
     {
         $this->cc = $users;
 
@@ -88,7 +87,7 @@ class PendingMail
     /**
      * Set the recipients of the message.
      */
-    public function bcc(array|Collection|HasMailAddress|string $users): self
+    public function bcc(mixed $users): static
     {
         $this->bcc = $users;
 
@@ -96,56 +95,39 @@ class PendingMail
     }
 
     /**
-     * Set the mailer of the message.
-     */
-    public function mailer(string $name): self
-    {
-        $this->mailer = ApplicationContext::getContainer()->get(MailManagerInterface::class)->get($name);
-
-        return $this;
-    }
-
-    /**
-     * Render the given message as a view.
-     */
-    public function render(MailableInterface $mailable): string
-    {
-        return $this->mailer->render($this->fill($mailable));
-    }
-
-    /**
      * Send a new mailable message instance.
      */
-    public function send(MailableInterface $mailable): void
+    public function send(Mailable $mailable): null|SentMessage
     {
-        $this->mailer->send($this->fill($mailable));
+        return $this->mailer->send($this->fill($mailable));
     }
 
     /**
      * Push the given mailable onto the queue.
      */
-    public function queue(MailableInterface $mailable, ?string $queue = null): bool
+    public function queue(Mailable $mailable): mixed
     {
-        return $this->mailer->queue($this->fill($mailable), $queue);
+        return $this->mailer->queue($this->fill($mailable));
     }
 
     /**
-     * Deliver the queued message after the given delay.
+     * Deliver the queued message after (n) seconds.
+     * @param mixed $delay
      */
-    public function later(MailableInterface $mailable, int $delay, ?string $queue = null): bool
+    public function later($delay, Mailable $mailable): bool
     {
-        return $this->mailer->later($this->fill($mailable), $delay, $queue);
+        return $this->mailer->later($delay, $this->fill($mailable));
     }
 
     /**
      * Populate the mailable with the addresses.
      */
-    protected function fill(MailableInterface $mailable): MailableInterface
+    protected function fill(Mailable $mailable): Mailable
     {
         return tap($mailable->to($this->to)
             ->cc($this->cc)
-            ->bcc($this->bcc), function (MailableInterface $mailable) {
-                if (! empty($this->locale)) {
+            ->bcc($this->bcc), function (Mailable $mailable) {
+                if ($this->locale) {
                     $mailable->locale($this->locale);
                 }
             });

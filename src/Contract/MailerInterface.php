@@ -16,10 +16,6 @@ interface MailerInterface
      */
     public function render(MailableInterface $mailable): string;
 
-    /**
-     * Send a new message using a mailable instance.
-     */
-    public function sendNow(MailableInterface $mailable): void;
 
     /**
      * Send a new message using a mailable instance.

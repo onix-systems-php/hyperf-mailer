@@ -45,6 +45,11 @@ class MailManager implements MailManagerInterface
     protected array $mailers = [];
 
     /**
+     * The registered custom driver creators.
+     */
+    protected array $customCreators = [];
+
+    /**
      * Create a new Mail manager instance.
      */
     public function __construct(protected ContainerInterface $container)
@@ -67,9 +72,9 @@ class MailManager implements MailManagerInterface
      */
     public function mailer(?string $name = null): MailerInterface
     {
-        $name = $name ?: $this->getDefaultMailerName();
+        $name = $name ?: $this->getDefaultDriver();
 
-        return $this->get($name);
+        return $this->mailers[$name] = $this->get($name);
     }
 
     /**
@@ -77,11 +82,15 @@ class MailManager implements MailManagerInterface
      */
     public function get(string $name): MailerInterface
     {
-        if (empty($this->mailers[$name])) {
-            $this->mailers[$name] = $this->resolve($name);
-        }
+        return $this->mailers[$name] ?? $this->resolve($name);
+    }
 
-        return $this->mailers[$name];
+    /**
+     * Get a mailer driver instance.
+     */
+    public function driver(string $driver = null): Mailer|MailerInterface
+    {
+        return $this->mailer($driver);
     }
 
     /**
@@ -92,6 +101,32 @@ class MailManager implements MailManagerInterface
         $mailable instanceof ShouldQueue
             ? $mailable->queue()
             : $mailable->send($this);
+    }
+
+    /**
+     * Create a new transport instance.
+     *
+     * @return TransportInterface
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function createSymfonyTransport(array $config)
+    {
+        // Here we will check if the "transport" key exists and if it doesn't we will
+        // assume an application is still using the legacy mail configuration file
+        // format and use the "mail.driver" configuration option instead for BC.
+        $transport = $config['transport'] ?? $this->app['config']['mail.driver'];
+
+        if (isset($this->customCreators[$transport])) {
+            return call_user_func($this->customCreators[$transport], $config);
+        }
+
+        if (trim($transport ?? '') === ''
+            || ! method_exists($this, $method = 'create' . ucfirst(\Illuminate\Support\Str::camel($transport)) . 'Transport')) {
+            throw new \InvalidArgumentException("Unsupported mail transport [{$transport}].");
+        }
+
+        return $this->{$method}($config);
     }
 
     /**
@@ -121,7 +156,7 @@ class MailManager implements MailManagerInterface
     /**
      * Get the default mail driver name.
      */
-    protected function getDefaultMailerName(): string
+    protected function getDefaultDriver(): string
     {
         return $this->config->get('mail.default');
     }
