@@ -81,11 +81,9 @@ class Mailer implements MailerInterface
      */
     public function __construct(
         string $name,
-        string $views,
         TransportInterface $transport,
         protected ContainerInterface $container,
     ) {
-        $this->views = $views;
         $this->name = $name;
         $this->events = $container->get(EventDispatcherInterface::class);
         $this->transport = $transport;
@@ -206,10 +204,10 @@ class Mailer implements MailerInterface
      * Send a new message using a view.
      */
     public function send(
-        array|MailableContract|MailableInterface|string $view,
+        array|MailableContract|string $view,
         array $data = [],
         \Closure|string $callback = null
-    ): null|SentMessage {
+    ): ?SentMessage {
         if ($view instanceof MailableContract) {
             return $this->sendMailable($view);
         }
@@ -254,6 +252,7 @@ class Mailer implements MailerInterface
                 return $sentMessage;
             }
         }
+        return null;
     }
 
     public function queue($view, ?string $queue = null): bool
@@ -332,6 +331,40 @@ class Mailer implements MailerInterface
     }
 
     /**
+     * Get the Symfony Transport instance.
+     */
+    public function getSymfonyTransport(): TransportInterface
+    {
+        return $this->transport;
+    }
+
+    /**
+     * Get the view factory instance.
+     */
+    public function getViewFactory(): string
+    {
+        return $this->views;
+    }
+
+    /**
+     * Set the Symfony Transport instance.
+     */
+    public function setSymfonyTransport(TransportInterface $transport): void
+    {
+        $this->transport = $transport;
+    }
+
+    /**
+     * Set the queue manager instance.
+     */
+    public function setQueue(string $queue): static
+    {
+        $this->queue = $queue;
+
+        return $this;
+    }
+
+    /**
      * Replace the embedded image attachments with raw, inline image data for browser rendering.
      */
     protected function replaceEmbeddedAttachments(string $renderedView, array $attachments): string
@@ -364,9 +397,9 @@ class Mailer implements MailerInterface
             return true;
         }
 
-        return $this->events->until(
+        return (bool) $this->events->dispatch(
             new MailMessageSending($message, $data)
-        ) !== false;
+        );
     }
 
     /**
@@ -393,48 +426,9 @@ class Mailer implements MailerInterface
     }
 
     /**
-     * Get the Symfony Transport instance.
-     *
-     * @return TransportInterface
-     */
-    public function getSymfonyTransport(): TransportInterface
-    {
-        return $this->transport;
-    }
-
-    /**
-     * Get the view factory instance.
-     */
-    public function getViewFactory(): string
-    {
-        return $this->views;
-    }
-
-    /**
-     * Set the Symfony Transport instance.
-     *
-     * @param TransportInterface $transport
-     * @return void
-     */
-    public function setSymfonyTransport(TransportInterface $transport): void
-    {
-        $this->transport = $transport;
-    }
-
-    /**
-     * Set the queue manager instance.
-     */
-    public function setQueue(string $queue): static
-    {
-        $this->queue = $queue;
-
-        return $this;
-    }
-
-    /**
      * Add the content to a given message.
      */
-    protected function addContent(Message $message, string $view, string $plain, string $raw, array $data): void
+    protected function addContent(Message $message, string $view = null, string $plain = null, string $raw = null, array $data): void
     {
         if (isset($view)) {
             $message->html($this->renderView($view, $data) ?: ' ');

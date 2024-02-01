@@ -9,67 +9,40 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer\Contract;
 
-use Hyperf\Collection\Collection;
+use OnixSystemsPHP\HyperfMailer\Mailer;
+use OnixSystemsPHP\HyperfMailer\SentMessage;
 
 interface MailableInterface
 {
     /**
-     * Set the sender of the message.
+     * Send the message using the given mailer.
      */
-    public function from(HasMailAddress|string $address, ?string $name = null): self;
+    public function send(Mailer $mailer): ?SentMessage;
 
     /**
-     * Set the "reply to" address of the message.
+     * Queue the given message.
      */
-    public function replyTo(HasMailAddress|string $address, ?string $name = null): self;
+    public function queue(string $queue): mixed;
 
     /**
-     * Add the recipient of the message.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $address
+     * Deliver the queued message after (n) seconds.
      */
-    public function cc(array|Collection|HasMailAddress|string $address, ?string $name = null): self;
+    public function later(\DateInterval|\DateTimeInterface|int $delay, string $queue): mixed;
 
     /**
-     * Determine if the given recipient is set on the mailable.
+     * Set the recipients of the message.
      */
-    public function hasCc(HasMailAddress|string $address, ?string $name = null): bool;
+    public function cc(array|object|string $address, string $name = null): self;
 
     /**
-     * Add the recipients of the message.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $address
+     * Set the recipients of the message.
      */
-    public function bcc(array|Collection|HasMailAddress|string $address, ?string $name = null): self;
+    public function bcc(array|object|string $address, string $name = null): self;
 
     /**
-     * Determine if the given recipient is set on the mailable.
+     * Set the recipients of the message.
      */
-    public function hasBcc(HasMailAddress|string $address, ?string $name = null): bool;
-
-    /**
-     * Add the recipients of the message.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $address
-     */
-    public function to(array|Collection|HasMailAddress|string $address, ?string $name = null): self;
-
-    /**
-     * Determine if the given recipient is set on the mailable.
-     */
-    public function hasTo(HasMailAddress|string $address, ?string $name = null): bool;
-
-    /**
-     * Set the subject of the message.
-     */
-    public function subject(string $subject): self;
-
-    /**
-     * Set the priority of this message.
-     *
-     * The value is an integer where 1 is the highest priority and 5 is the lowest.
-     */
-    public function priority(int $level): self;
+    public function to(array|object|string $address, string $name = null): self;
 
     /**
      * Set the locale of the message.
@@ -80,64 +53,4 @@ interface MailableInterface
      * Set the name of the mailer that should be used to send the message.
      */
     public function mailer(string $mailer): self;
-
-    /**
-     * Set the html view template for the message.
-     */
-    public function htmlView(string $template): self;
-
-    /**
-     * Set the plain text view template for the message.
-     */
-    public function textView(string $template): self;
-
-    /**
-     * Set the view data for the message.
-     */
-    public function with(array|string $key, mixed $value = null): self;
-
-    /**
-     * Set the rendered HTML content for the message.
-     */
-    public function htmlBody(string $content): self;
-
-    /**
-     * Set the rendered plain text content for the message.
-     */
-    public function textBody(string $content): self;
-
-    /**
-     * Attach a file to the message.
-     */
-    public function attach(string $file, array $options = []): self;
-
-    /**
-     * Attach a file to the message from storage.
-     */
-    public function attachFromStorage(?string $adapter, string $path, ?string $name = null, array $options = []): self;
-
-    /**
-     * Attach in-memory data as an attachment.
-     */
-    public function attachData(string $data, string $name, array $options = []): self;
-
-    /**
-     * Render the message as a view.
-     */
-    public function render(null|MailerInterface|MailManagerInterface $mailer = null): string;
-
-    /**
-     * Send the message using the given mailer.
-     */
-    public function send(null|MailerInterface|MailManagerInterface $mailer = null): void;
-
-    /**
-     * Queue the message for sending.
-     */
-    public function queue(?string $queue = null): bool;
-
-    /**
-     * Deliver the queued message after the given delay.
-     */
-    public function later(int $delay, ?string $queue = null): bool;
 }

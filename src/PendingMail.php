@@ -10,7 +10,11 @@ declare(strict_types=1);
 namespace OnixSystemsPHP\HyperfMailer;
 
 use Hyperf\Conditionable\Conditionable;
+use Hyperf\Context\ApplicationContext;
+use Hyperf\Contract\ConfigInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\HasLocalePreference;
+use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
+
 use function Hyperf\Tappable\tap;
 
 class PendingMail
@@ -20,7 +24,7 @@ class PendingMail
     /**
      * The mailer instance.
      */
-    protected Mailer $mailer;
+    protected Contract\MailerInterface|MailManagerInterface $mailer;
 
     /**
      * The locale of the message.
@@ -45,8 +49,10 @@ class PendingMail
     /**
      * Create a new mailable mailer instance.
      */
-    public function __construct(Mailer $mailer)
+    public function __construct(Contract\MailerInterface|MailManagerInterface $mailer)
     {
+        $config = ApplicationContext::getContainer()->get(ConfigInterface::class);
+        $this->locale = $config->get('translation.fallback_locale', 'en-US');
         $this->mailer = $mailer;
     }
 
@@ -124,7 +130,7 @@ class PendingMail
      */
     protected function fill(Mailable $mailable): Mailable
     {
-        return tap($mailable->to($this->to)
+        return tap($mailable->to($this->to['address'], $this->to['name'])
             ->cc($this->cc)
             ->bcc($this->bcc), function (Mailable $mailable) {
                 if ($this->locale) {

@@ -9,26 +9,29 @@ declare(strict_types=1);
 
 namespace OnixSystemsPHP\HyperfMailer\Contract;
 
+use OnixSystemsPHP\HyperfMailer\Mailable;
+use OnixSystemsPHP\HyperfMailer\PendingMail;
+use OnixSystemsPHP\HyperfMailer\SentMessage;
+
 interface MailerInterface
 {
     /**
-     * Render the given message as a view.
+     * Begin the process of mailing a mailable class instance.
      */
-    public function render(MailableInterface $mailable): string;
-
-
-    /**
-     * Send a new message using a mailable instance.
-     */
-    public function send(MailableInterface $mailable): void;
+    public function to(mixed $users): PendingMail;
 
     /**
-     * Queue a new e-mail message for sending.
+     * Begin the process of mailing a mailable class instance.
      */
-    public function queue(MailableInterface $mailable, ?string $queue = null): bool;
+    public function bcc(mixed $users): PendingMail;
 
     /**
-     * Queue a new e-mail message for sending.
+     * Send a new message with only a raw text part.
      */
-    public function later(MailableInterface $mailable, int $delay, ?string $queue = null): bool;
+    public function raw(string $text, mixed $callback): ?SentMessage;
+
+    /**
+     * Send a new message using a view.
+     */
+    public function send(array|Mailable|string $view, array $data = [], \Closure|string $callback = null): ?SentMessage;
 }

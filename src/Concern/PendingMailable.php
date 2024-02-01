@@ -17,18 +17,14 @@ trait PendingMailable
 {
     /**
      * Begin the process of mailing a mailable class instance.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
-    public function to(array|Collection|HasMailAddress|string $users): PendingMail
+    public function to(mixed $users): PendingMail
     {
         return (new PendingMail($this))->to($users);
     }
 
     /**
      * Begin the process of mailing a mailable class instance.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
     public function cc(array|Collection|HasMailAddress $users): PendingMail
     {
@@ -37,10 +33,8 @@ trait PendingMailable
 
     /**
      * Begin the process of mailing a mailable class instance.
-     *
-     * @param Collection|HasMailAddress|HasMailAddress[]|string|string[] $users
      */
-    public function bcc(array|Collection|HasMailAddress $users): PendingMail
+    public function bcc(mixed $users): PendingMail
     {
         return (new PendingMail($this))->bcc($users);
     }

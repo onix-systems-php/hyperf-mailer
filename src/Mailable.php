@@ -14,6 +14,7 @@ use Hyperf\Collection\Collection;
 use Hyperf\Conditionable\Conditionable;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\CompressInterface;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\TranslatorInterface;
 use Hyperf\Contract\UnCompressInterface;
 use Hyperf\Coroutine\Coroutine;
@@ -44,7 +45,7 @@ use function Hyperf\Config\config;
 use function Hyperf\Support\call;
 use function Hyperf\Support\class_basename;
 
-abstract class Mailable implements MailableInterface, CompressInterface, UnCompressInterface
+abstract class Mailable implements MailableInterface
 {
     use Conditionable, ForwardsCalls, Macroable, Localizable {
         __call as macroCall;
@@ -161,6 +162,12 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
      * The HTML to use for the message.
      */
     protected string $html;
+
+    public function __construct()
+    {
+        $config = ApplicationContext::getContainer()->get(ConfigInterface::class);
+        $this->locale = $config->get('translation.fallback_locale', 'en-US');
+    }
 
     /**
      * Dynamically bind parameters to the message.
@@ -779,7 +786,7 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
     /**
      * Send the message using the given mailer.
      */
-    public function send(Mailer|MailerInterface|MailManagerInterface $mailer = null): ?SentMessage
+    public function send(Mailer $mailer): ?SentMessage
     {
         return $this->withLocale($this->locale, function () use ($mailer) {
             $this->prepareMailableForDelivery();
@@ -809,7 +816,7 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
         return ApplicationContext::getContainer()->get(DriverFactory::class)->get($queue)->push($this->newQueuedJob());
     }
 
-    public function later(int $delay, ?string $queue = null): bool
+    public function later(\DateInterval|\DateTimeInterface|int $delay, ?string $queue = null): bool
     {
         $queue = $queue ?: (property_exists($this, 'queue') ? $this->queue : array_key_first(config('async_queue')));
 
@@ -889,9 +896,8 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
             call([$mailable, 'build']);
 
             $data = $mailable->buildViewData();
-            $html = $this->buildView($data);
-
-            $view = $this->view;
+            $view = $this->buildView($data);
+            $html = $this->render();
 
             if (is_array($view) && isset($view[1])) {
                 $text = $view[1];
@@ -914,8 +920,8 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
     protected function prepareMailableForDelivery(): void
     {
         if (method_exists($this, 'build')) {
-            $mailableInstance = ApplicationContext::getContainer()->get($this);
-            $mailableInstance->build();
+            $mailable = clone $this;
+            call([$mailable, 'build']);
         }
 
         $this->ensureHeadersAreHydrated();
@@ -1071,36 +1077,46 @@ abstract class Mailable implements MailableInterface, CompressInterface, UnCompr
     protected function buildView(array $data): ?string
     {
         $channel = new Channel(1);
-        $html = null;
+
+        $result = null;
+
         Coroutine::create(function () use ($data, $channel) {
             if (! empty($this->locale)) {
                 ApplicationContext::getContainer()->get(TranslatorInterface::class)->setLocale($this->locale);
             }
 
-            $html = $this->renderView($this->html, $data);
-
             if (isset($this->html)) {
-                return array_filter([
+                $html = $this->renderView($this->html, $data);
+                $result = array_filter([
                     'html' => $html,
                     'text' => $this->textView ?? null,
                 ]);
+                $channel->push($result);
+                return;
             }
 
             if (isset($this->markdown)) {
-                return $this->buildMarkdownView();
+                $result = $this->buildMarkdownView();
+                $channel->push($result);
+                return;
             }
 
             if (isset($this->view, $this->textView)) {
-                return [$this->view, $this->textView];
-            }
-            if (isset($this->textView)) {
-                return ['text' => $this->textView];
+                $result = [$this->view, $this->textView];
+                $channel->push($result);
+                return;
+            } elseif (isset($this->textView)) {
+                $result = ['text' => $this->textView];
+                $channel->push($result);
+                return;
             }
 
-            $channel->push([$this->html, $this->textView]);
+            $channel->push($this->view);
         });
 
-        return $html;
+        $result = $channel->pop();
+
+        return is_null($result) ? $this->view : $result;
     }
 
     protected function buildMarkdownView(): array
