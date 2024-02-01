@@ -255,63 +255,17 @@ class Mailer implements MailerInterface
         return null;
     }
 
-    public function queue($view, ?string $queue = null): bool
+    public function queue(MailableInterface $mailable, ?string $queue = null): bool
     {
-        if (! $view instanceof MailableInterface) {
-            throw new \InvalidArgumentException('Only mailables may be queued.');
-        }
-
-        if (is_string($queue)) {
-            $view->onQueue($queue);
-        }
-
-        return $view->mailer($this->name)->queue($queue);
+        return $mailable->mailer($this->name)->queue($queue);
     }
 
-    /**
-     * Queue a new e-mail message for sending on the given queue.
-     */
-    public function onQueue(string $queue, MailableContract $view): mixed
-    {
-        return $this->queue($view, $queue);
-    }
-
-    /**
-     * Queue a new e-mail message for sending on the given queue.
-     *
-     * This method didn't match rest of framework's "onQueue" phrasing. Added "onQueue".
-     */
-    public function queueOn(string $queue, MailableContract $view): mixed
-    {
-        return $this->onQueue($queue, $view);
-    }
-
-    /**
-     * Queue a new e-mail message for sending after (n) seconds.
-     *
-     * @throws \InvalidArgumentException
-     */
     public function later(
         \DateInterval|\DateTimeInterface|int $delay,
-        MailableContract $view,
+        MailableContract $mailable,
         string $queue = null
-    ): mixed {
-        if (! $view instanceof MailableContract) {
-            throw new \InvalidArgumentException('Only mailables may be queued.');
-        }
-
-        return $view->mailer($this->name)->later(
-            $delay,
-            is_null($queue) ? $this->queue : $queue
-        );
-    }
-
-    /**
-     * Queue a new e-mail message for sending after (n) seconds on the given queue.
-     */
-    public function laterOn(string $queue, \DateInterval|\DateTimeInterface|int $delay, MailableContract $view): mixed
-    {
-        return $this->later($delay, $view, $queue);
+    ): bool {
+        return $mailable->mailer($this->name)->later($delay, $queue);
     }
 
     /**

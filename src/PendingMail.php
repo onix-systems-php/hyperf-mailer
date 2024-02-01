@@ -111,9 +111,9 @@ class PendingMail
     /**
      * Push the given mailable onto the queue.
      */
-    public function queue(Mailable $mailable): mixed
+    public function queue(Mailable $mailable, ?string $queue = null): mixed
     {
-        return $this->mailer->queue($this->fill($mailable));
+        return $this->mailer->queue($this->fill($mailable), $queue);
     }
 
     /**
