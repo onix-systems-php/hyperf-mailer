@@ -14,6 +14,7 @@ use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\ConfigInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\HasLocalePreference;
 use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
+use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
 
 use function Hyperf\Tappable\tap;
@@ -111,7 +112,7 @@ class PendingMail
     /**
      * Send a new mailable message instance.
      */
-    public function send(Mailable $mailable): null|SentMessage
+    public function send(MailableInterface $mailable): null|SentMessage
     {
         return $this->mailer->send($this->fill($mailable));
     }
@@ -128,7 +129,7 @@ class PendingMail
      * Deliver the queued message after (n) seconds.
      * @param mixed $delay
      */
-    public function later($delay, Mailable $mailable): bool
+    public function later($delay, MailableInterface $mailable): bool
     {
         return $this->mailer->later($delay, $this->fill($mailable));
     }
@@ -136,7 +137,7 @@ class PendingMail
     /**
      * Populate the mailable with the addresses.
      */
-    protected function fill(Mailable $mailable): Mailable
+    protected function fill(MailableInterface $mailable): Mailable
     {
         return tap($mailable->to($this->to)
             ->cc($this->cc)
