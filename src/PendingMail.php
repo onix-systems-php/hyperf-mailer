@@ -13,6 +13,7 @@ use Hyperf\Conditionable\Conditionable;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Contract\ConfigInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\HasLocalePreference;
+use OnixSystemsPHP\HyperfMailer\Contract\HasMailAddress;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
 
 use function Hyperf\Tappable\tap;
@@ -71,7 +72,11 @@ class PendingMail
      */
     public function to(mixed $users): static
     {
-        $this->to = $users;
+        if ($users instanceof HasMailAddress) {
+            $this->to = [['address' => $users->getMailAddress(), 'name' => $users->getMailAddressDisplayName()]];
+        } else {
+            $this->to = is_array($users) ? $users : (array) $users;
+        }
 
         if (! $this->locale && $users instanceof HasLocalePreference) {
             $this->locale($users->preferredLocale());
