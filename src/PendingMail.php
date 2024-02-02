@@ -78,8 +78,11 @@ class PendingMail
             $this->to = is_array($users) ? $users : (array) $users;
         }
 
-        if (! $this->locale && $users instanceof HasLocalePreference) {
-            $this->locale($users->preferredLocale());
+        if (empty($this->locale)
+            && $users instanceof HasLocalePreference
+            && is_string($locale = $users->preferredLocale())
+        ) {
+            $this->locale($locale);
         }
 
         return $this;
