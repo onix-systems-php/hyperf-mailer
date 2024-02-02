@@ -300,7 +300,7 @@ class Message
     /**
      * Add a recipient to the message.
      */
-    protected function addAddresses(array|string $address, string $name, string $type): static
+    protected function addAddresses(array|string $address, ?string $name, string $type): static
     {
         if (is_array($address)) {
             $type = lcfirst($type);
@@ -311,7 +311,7 @@ class Message
                 }
 
                 if (is_array($address)) {
-                    return new Address($address['email'] ?? $address['address'], $address['name'] ?? null);
+                    return new Address($address['email'] ?? $address['address'], $address['name'] ?? '');
                 }
 
                 if (is_null($address)) {
@@ -323,7 +323,7 @@ class Message
 
             $this->message->{"{$type}"}(...$addresses);
         } else {
-            $this->message->{"add{$type}"}(new Address($address, (string) $name));
+            $this->message->{"add{$type}"}(new Address($address, $name ?? ''));
         }
 
         return $this;

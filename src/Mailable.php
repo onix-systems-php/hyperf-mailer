@@ -786,7 +786,7 @@ abstract class Mailable implements MailableInterface
     /**
      * Send the message using the given mailer.
      */
-    public function send(Mailer $mailer): ?SentMessage
+    public function send(MailerInterface|MailManagerInterface $mailer): ?SentMessage
     {
         return $this->withLocale($this->locale, function () use ($mailer) {
             $this->prepareMailableForDelivery();
