@@ -130,7 +130,7 @@ class PendingMail
      */
     protected function fill(Mailable $mailable): Mailable
     {
-        return tap($mailable->to($this->to['address'], $this->to['name'])
+        return tap($mailable->to($this->to)
             ->cc($this->cc)
             ->bcc($this->bcc), function (Mailable $mailable) {
                 if ($this->locale) {
