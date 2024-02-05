@@ -73,11 +73,7 @@ class PendingMail
      */
     public function to(mixed $users): static
     {
-        if ($users instanceof HasMailAddress) {
-            $this->to = [['address' => $users->getMailAddress(), 'name' => $users->getMailAddressDisplayName()]];
-        } else {
-            $this->to = is_array($users) ? $users : (array) $users;
-        }
+        $this->to = $this->setRecipients($users);
 
         if (empty($this->locale)
             && $users instanceof HasLocalePreference
@@ -94,7 +90,7 @@ class PendingMail
      */
     public function cc(mixed $users): static
     {
-        $this->cc = $users;
+        $this->cc = $this->setRecipients($users);
 
         return $this;
     }
@@ -104,7 +100,7 @@ class PendingMail
      */
     public function bcc(mixed $users): static
     {
-        $this->bcc = $users;
+        $this->bcc = $this->setRecipients($users);
 
         return $this;
     }
@@ -146,5 +142,13 @@ class PendingMail
                     $mailable->locale($this->locale);
                 }
             });
+    }
+
+    private function setRecipients(mixed $users): array
+    {
+        if ($users instanceof HasMailAddress) {
+            return [['email' => $users->getMailAddress(), 'name' => $users->getMailAddressDisplayName()]];
+        }
+        return is_array($users) ? $users : (array) $users;
     }
 }
