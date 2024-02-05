@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OnixSystemsPHP\HyperfMailer;
 
 use OnixSystemsPHP\HyperfMailer\Command\GenMailCommand;
+use OnixSystemsPHP\HyperfMailer\Contract\MailableInterface;
 use OnixSystemsPHP\HyperfMailer\Contract\MailManagerInterface;
 
 class ConfigProvider
@@ -19,6 +20,7 @@ class ConfigProvider
         return [
             'dependencies' => [
                 MailManagerInterface::class => MailManager::class,
+                MailableInterface::class => Mailable::class,
             ],
             'commands' => [
                 GenMailCommand::class,

@@ -7,12 +7,12 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace OnixSystemsPHP\HyperfMailer\Contract;
+namespace OnixSystemsPHP\HyperfMailer\Mailables;
 
-interface HasLocalePreference
+class Address
 {
     /**
-     * Get the preferred locale of the entity.
+     * Create a new address instance.
      */
-    public function preferredLocale(): ?string;
+    public function __construct(public string $address, public ?string $name = null) {}
 }

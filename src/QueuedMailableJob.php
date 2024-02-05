@@ -18,7 +18,7 @@ class QueuedMailableJob extends Job
 {
     public function __construct(public MailableInterface $mailable) {}
 
-    public function handle()
+    public function handle(): void
     {
         $this->mailable->send(ApplicationContext::getContainer()->get(MailManagerInterface::class));
     }
